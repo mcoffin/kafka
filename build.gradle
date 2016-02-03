@@ -1,25 +1,13 @@
-apply plugin: 'scala'
-apply plugin: 'idea'
-apply plugin: 'distribution'
+plugins {
+    id 'scala'
+    id 'idea'
+    id 'distribution'
+}
 
 version = '0.9.4.0'
 
-jar.archiveName = "kafka-mesos-${version}.jar"
-
 repositories {
     mavenCentral()
-}
-
-buildDir = 'out/gradle'
-libsDirName = '../../'
-
-sourceSets {
-    main {
-        scala { srcDirs = ['src/scala'] }
-    }
-    test {
-        scala { srcDirs = ['src/test'] }
-    }
 }
 
 dependencies {
@@ -60,14 +48,12 @@ jar {
     manifest.attributes("Main-Class": "ly.stealth.mesos.kafka.Cli")
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.8'
-}
-
 distributions.main {
     contents {
-        from(rootDir) {
+        from(jar.destinationDir) {
             include jar.archiveName
+        }
+        from(projectDir) {
             include "README.md"
             include "LICENSE"
             include "kafka-mesos.properties"
@@ -79,4 +65,17 @@ distributions.main {
 distTar {
     dependsOn jar
     compression Compression.GZIP
+}
+
+task copyJarToRoot(type: Copy) {
+    into rootDir
+    from(jar.destinationDir) {
+        include jar.archiveName
+    }
+}
+
+build.dependsOn copyJarToRoot
+
+clean.doFirst {
+    delete "${copyJarToRoot.destinationDir}/${jar.archiveName}"
 }
