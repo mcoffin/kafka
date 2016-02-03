@@ -1,5 +1,6 @@
 apply plugin: 'scala'
 apply plugin: 'idea'
+apply plugin: 'distribution'
 
 version = '0.9.4.0'
 
@@ -61,4 +62,21 @@ jar {
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.8'
+}
+
+distributions.main {
+    contents {
+        from(rootDir) {
+            include jar.archiveName
+            include "README.md"
+            include "LICENSE"
+            include "kafka-mesos.properties"
+            include "kafka-mesos.sh"
+        }
+    }
+}
+
+distTar {
+    dependsOn jar
+    compression Compression.GZIP
 }
