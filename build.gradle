@@ -1,42 +1,33 @@
-apply plugin: 'scala'
-apply plugin: 'idea'
+plugins {
+    id 'scala'
+    id 'idea'
+    id 'distribution'
+}
 
 version = '0.9.4.0'
-
-jar.archiveName = "kafka-mesos-${version}.jar"
 
 repositories {
     mavenCentral()
 }
 
-buildDir = 'out/gradle'
-libsDirName = '../../'
-
-sourceSets {
-    main {
-        scala { srcDirs = ['src/scala'] }
-    }
-    test {
-        scala { srcDirs = ['src/test'] }
-    }
-}
+def jettyVersion = "9.0.4.v20130625"
 
 dependencies {
-    compile "org.scala-lang:scala-library:2.10.6"
-    compile "org.apache.mesos:mesos:0.25.0"
+    compile "org.scala-lang:scala-library:${scalaVersion}.+"
+    compile "org.apache.mesos:mesos:${mesosVersion}"
     compile "com.google.protobuf:protobuf-java:2.5.0"
     compile "log4j:log4j:1.2.17"
     compile "net.sf.jopt-simple:jopt-simple:4.8"
-    compile "org.eclipse.jetty:jetty-http:9.0.4.v20130625"
-    compile "org.eclipse.jetty:jetty-io:9.0.4.v20130625"
-    compile "org.eclipse.jetty:jetty-security:9.0.4.v20130625"
-    compile "org.eclipse.jetty:jetty-server:9.0.4.v20130625"
-    compile "org.eclipse.jetty:jetty-servlet:9.0.4.v20130625"
-    compile "org.eclipse.jetty:jetty-util:9.0.4.v20130625"
+    compile "org.eclipse.jetty:jetty-http:${jettyVersion}"
+    compile "org.eclipse.jetty:jetty-io:${jettyVersion}"
+    compile "org.eclipse.jetty:jetty-security:${jettyVersion}"
+    compile "org.eclipse.jetty:jetty-server:${jettyVersion}"
+    compile "org.eclipse.jetty:jetty-servlet:${jettyVersion}"
+    compile "org.eclipse.jetty:jetty-util:${jettyVersion}"
     compile "javax.servlet:javax.servlet-api:3.0.1"
     testCompile 'junit:junit:4.12'
 
-    compile ('org.apache.kafka:kafka_2.10:0.8.1.1') {
+    compile ("org.apache.kafka:kafka_${scalaVersion}:${kafkaVersion}") {
         exclude group: "javax.jms"
         exclude group: "com.sun.jdmk"
         exclude group: "com.sun.jmx"
@@ -59,6 +50,34 @@ jar {
     manifest.attributes("Main-Class": "ly.stealth.mesos.kafka.Cli")
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '2.8'
+distributions.main {
+    contents {
+        from(jar.destinationDir) {
+            include jar.archiveName
+        }
+        from(projectDir) {
+            include "README.md"
+            include "LICENSE"
+            include "kafka-mesos.properties"
+            include "kafka-mesos.sh"
+        }
+    }
+}
+
+distTar {
+    dependsOn jar
+    compression Compression.GZIP
+}
+
+task copyJarToRoot(type: Copy) {
+    into rootDir
+    from(jar.destinationDir) {
+        include jar.archiveName
+    }
+}
+
+build.dependsOn copyJarToRoot
+
+clean.doFirst {
+    delete "${copyJarToRoot.destinationDir}/${jar.archiveName}"
 }
